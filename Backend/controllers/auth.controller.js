@@ -3,14 +3,13 @@ import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-// Input validation schemas
 const registerSchema = zod.object({
   name: zod.string().min(2, "Name must be at least 2 characters"),
   role: zod.enum(["mentor", "student"], {
     required_error: "Role is required",
     invalid_type_error: "Role must be either 'mentor' or 'student'"
   }),
-  email: zod.string().email("Please provide a valid email"),
+  email: zod.email("Please provide a valid email"),
   password: zod.string()
     .min(6, "Password must be at least 6 characters")
     .max(100, "Password cannot exceed 100 characters"),
@@ -19,11 +18,11 @@ const registerSchema = zod.object({
 });
 
 const loginSchema = zod.object({
-  email: zod.string().email("Please provide a valid email"),
+  email: zod.email("Please provide a valid email"),
   password: zod.string().min(1, "Password is required")
 });
 
-// Generate JWT Token
+
 const generateToken = (id, role) => {
   return jwt.sign(
     { id, role },
@@ -34,8 +33,6 @@ const generateToken = (id, role) => {
 
 export async function Register(req, res) {
   try {
-    // Validate request body
-    console.log(req.body);
     const validation = registerSchema.safeParse(req.body);
     if (!validation.success) {
       return res.status(400).json({
@@ -50,7 +47,6 @@ export async function Register(req, res) {
 
     const { name, email, password, role, bio, hourlyRate } = validation.data;
 
-    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({
@@ -59,7 +55,6 @@ export async function Register(req, res) {
       });
     }
 
-    // Create user (pre-save hook will hash the password)
     const user = await User.create({
       name,
       email,
@@ -69,9 +64,7 @@ export async function Register(req, res) {
       ...(hourlyRate && role === 'mentor' && { hourlyRate })
     });
 
-    if (user) {
-      const token = generateToken(user._id, user.role);
-      
+    if (user) {      
       res.status(201).json({
         success: true,
         _id: user._id,
@@ -80,7 +73,6 @@ export async function Register(req, res) {
         role: user.role,
         bio: user.bio,
         ...(user.hourlyRate && { hourlyRate: user.hourlyRate }),
-        token
       });
     } else {
       res.status(400).json({
@@ -100,7 +92,6 @@ export async function Register(req, res) {
 
 export async function Login(req, res) {
   try {
-    console.log("Login attempt for:", req.body?.email);
     
     const validation = loginSchema.safeParse(req.body);
     if (!validation.success) {
@@ -111,10 +102,8 @@ export async function Login(req, res) {
     const { email, password } = validation.data;
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Helper to escape special regex chars in the email
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    console.log("Looking for user:", normalizedEmail);
     const user = await User.findOne({ 
       email: { $regex: new RegExp(`^${escapeRegex(normalizedEmail)}$`, 'i') } 
     }).select('+password');
@@ -124,23 +113,18 @@ export async function Login(req, res) {
       return res.status(401).json({"success":false,"message":"Invalid email or password"});
     }
 
-    // Defensive: ensure password field was returned
     if (typeof user.password !== 'string' || user.password.length === 0) {
       console.error("Password hash not returned for user:", user._id);
       return res.status(500).json({"success":false,"message":"Server misconfiguration: password not retrievable"});
     }
 
-    console.log("User found, comparing passwords");
 
-    // Compare password using bcrypt (pre-save hook already hashed it during registration)
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log("Bcrypt comparison result:", isMatch);
 
     if (!isMatch) {
       return res.status(401).json({"success":false,"message":"Invalid email or password"});
     }
 
-    // Generate token and return user data
     const token = generateToken(user._id, user.role);
     const { password: _, ...userData } = user.toObject();
     
@@ -156,7 +140,6 @@ export async function Login(req, res) {
 }
 
 export function Logout(req, res) {
-  // Note: Client-side should remove the token
   res.status(200).json({
     success: true,
     message: "Logged out successfully"
