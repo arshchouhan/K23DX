@@ -1,6 +1,5 @@
 const API_URL = 'http://localhost:4000/api';
 
-// Helper function to handle API requests
 const apiRequest = async (endpoint, options = {}) => {
   const headers = {
     'Content-Type': 'application/json',
@@ -8,14 +7,13 @@ const apiRequest = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  // Add auth token if available
   const token = localStorage.getItem('token');
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   const fullUrl = `${API_URL}${endpoint}`;
-  console.log(`API Request: ${options.method || 'GET'} ${fullUrl}`, options.body);
+  console.log(`API Request: ${options.method || 'GET'} ${fullUrl}`);
 
   try {
     const fetchOptions = {
@@ -25,17 +23,11 @@ const apiRequest = async (endpoint, options = {}) => {
       mode: 'cors'
     };
 
-    // Only add body if it's not a GET or HEAD request
     if (options.body && !['GET', 'HEAD'].includes(options.method || 'GET')) {
       fetchOptions.body = JSON.stringify(options.body);
     }
 
-    console.log('Fetch options:', fetchOptions);
     const response = await fetch(fullUrl, fetchOptions);
-
-    console.log('Response status:', response.status, response.statusText);
-    
-    // First, read the response as text to handle non-JSON responses
     const responseText = await response.text();
     let data;
     
@@ -60,7 +52,6 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 };
 
-// Auth API
 export const authAPI = {
   register: async (userData) => {
     return apiRequest('/auth/register', {
@@ -91,38 +82,106 @@ export const authAPI = {
   },
 };
 
-// User API
 export const userAPI = {
-  getProfile: () => apiRequest('/user/profile'),
-  updateProfile: (data) => 
-    apiRequest('/user/profile', {
-      method: 'PUT',
+  getMe: () => apiRequest('/user/me'),
+  
+  updateMe: (data) => 
+    apiRequest('/user/me', {
+      method: 'PATCH',
       body: data,
     }),
 };
 
-// Skills API
+export const mentorAPI = {
+  getAll: (params = {}) => {
+    const queryParams = new URLSearchParams(params).toString();
+    return apiRequest(`/mentors${queryParams ? '?' + queryParams : ''}`);
+  },
+  
+  getById: (id) => apiRequest(`/mentors/${id}`),
+  
+  getBySkill: (skillId) => apiRequest(`/mentors/skill/${skillId}`),
+  
+  getCarousel: () => apiRequest('/mentors/carousel'),
+};
+
 export const skillsAPI = {
   getAll: () => apiRequest('/skills'),
-  getById: (id) => apiRequest(`/skills/${id}`),
+  
   create: (data) => 
     apiRequest('/skills', {
       method: 'POST',
       body: data,
     }),
-  update: (id, data) =>
-    apiRequest(`/skills/${id}`, {
-      method: 'PUT',
-      body: data,
+    
+  getMentorSkills: (mentorId) => apiRequest(`/skills/mentor/${mentorId}`),
+  
+  addToMentor: (mentorId, skillIds) =>
+    apiRequest(`/skills/mentor/${mentorId}/skills`, {
+      method: 'POST',
+      body: { skillIds },
     }),
-  delete: (id) =>
-    apiRequest(`/skills/${id}`, {
+    
+  removeFromMentor: (mentorId, skillId) =>
+    apiRequest(`/skills/mentor/${mentorId}/skills/${skillId}`, {
       method: 'DELETE',
     }),
+};
+
+export const sessionAPI = {
+  create: (data) =>
+    apiRequest('/sessions', {
+      method: 'POST',
+      body: data,
+    }),
+    
+  getByRole: (role) => apiRequest(`/sessions?role=${role}`),
+  
+  getById: (id) => apiRequest(`/sessions/${id}`),
+  
+  updateStatus: (id, status) =>
+    apiRequest(`/sessions/${id}/status`, {
+      method: 'PATCH',
+      body: { status },
+    }),
+};
+
+export const paymentAPI = {
+  create: (data) =>
+    apiRequest('/payments', {
+      method: 'POST',
+      body: data,
+    }),
+    
+  getById: (id) => apiRequest(`/payments/${id}`),
+  
+  updateStatus: (id, status, providerTxnId) =>
+    apiRequest(`/payments/${id}/status`, {
+      method: 'PATCH',
+      body: { status, providerTxnId },
+    }),
+    
+  getBySession: (sessionId) => apiRequest(`/payments/session/${sessionId}`),
+};
+
+export const reviewAPI = {
+  create: (data) =>
+    apiRequest('/reviews', {
+      method: 'POST',
+      body: data,
+    }),
+    
+  getByMentor: (mentorId) => apiRequest(`/reviews?mentor=${mentorId}`),
+  
+  getById: (id) => apiRequest(`/reviews/${id}`),
 };
 
 export default {
   auth: authAPI,
   user: userAPI,
+  mentors: mentorAPI,
   skills: skillsAPI,
+  sessions: sessionAPI,
+  payments: paymentAPI,
+  reviews: reviewAPI,
 };

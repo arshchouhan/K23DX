@@ -1,51 +1,20 @@
-import zod from "zod";
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-
-const registerSchema = zod.object({
-  name: zod.string().min(2, "Name must be at least 2 characters"),
-  role: zod.enum(["mentor", "student"], {
-    required_error: "Role is required",
-    invalid_type_error: "Role must be either 'mentor' or 'student'"
-  }),
-  email: zod.email("Please provide a valid email"),
-  password: zod.string()
-    .min(6, "Password must be at least 6 characters")
-    .max(100, "Password cannot exceed 100 characters"),
-  bio: zod.string().optional(),
-  hourlyRate: zod.number().min(0).optional()
-});
-
-const loginSchema = zod.object({
-  email: zod.email("Please provide a valid email"),
-  password: zod.string().min(1, "Password is required")
-});
+import { env } from "../config/env.js";
 
 
 const generateToken = (id, role) => {
   return jwt.sign(
     { id, role },
-    process.env.JWT_SECRET || 'your_jwt_secret',
+    env.JWT_SECRET,
     { expiresIn: '30d' }
   );
 };
 
 export async function Register(req, res) {
   try {
-    const validation = registerSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        errors: validation.error.errors.map(err => ({
-          field: err.path[0],
-          message: err.message
-        }))
-      });
-    }
-
-    const { name, email, password, role, bio, hourlyRate } = validation.data;
+    const { name, email, password, role, bio, hourlyRate } = req.validatedData;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -85,21 +54,14 @@ export async function Register(req, res) {
     res.status(500).json({
       success: false,
       message: "Server error during registration",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 }
 
 export async function Login(req, res) {
   try {
-    
-    const validation = loginSchema.safeParse(req.body);
-    if (!validation.success) {
-      console.log("Validation failed:", validation.error);
-      return res.status(400).json({"success":false,"message":"Validation failed"});
-    }
-
-    const { email, password } = validation.data;
+    const { email, password } = req.validatedData;
     const normalizedEmail = email.toLowerCase().trim();
 
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -135,7 +97,7 @@ export async function Login(req, res) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({"success":false,"message":"Server error during login", "error": process.env.NODE_ENV === 'development' ? error.message : undefined});
+    return res.status(500).json({"success":false,"message":"Server error during login", "error": env.NODE_ENV === 'development' ? error.message : undefined});
   }
 }
 

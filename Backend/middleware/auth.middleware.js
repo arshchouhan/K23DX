@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
 
 export const authenticateToken = (req, res, next) => {
   try {
@@ -15,7 +16,7 @@ export const authenticateToken = (req, res, next) => {
       });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret', (err, user) => {
+    jwt.verify(token, env.JWT_SECRET, (err, user) => {
       if (err) {
         console.error('Token verification error:', err);
         return res.status(403).json({
