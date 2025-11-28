@@ -1,5 +1,6 @@
 import User from "../models/user.model.js";
 import MentorSkill from "../models/mentorSkills.model.js";
+import MentorProfile from "../models/mentorProfile.model.js";
 
 export async function GetCurrentUser(req, res) {
   try {
@@ -12,15 +13,21 @@ export async function GetCurrentUser(req, res) {
       });
     }
 
+    const userResponse = user.toObject();
+
     if (user.role === 'mentor') {
       const mentorSkills = await MentorSkill.find({ mentor: user._id })
         .populate('skill', 'name');
-      user._doc.skills = mentorSkills.map(ms => ms.skill);
+      userResponse.skills = mentorSkills.map(ms => ms.skill);
+
+      const mentorProfile = await MentorProfile.findOne({ user: user._id }).lean();
+      userResponse.mentorProfile = mentorProfile || null;
+      userResponse.isProfileComplete = mentorProfile?.isProfileComplete ?? false;
     }
 
     res.status(200).json({
       success: true,
-      user
+      user: userResponse
     });
   } catch (error) {
     console.error("Get current user error:", error);
@@ -60,15 +67,28 @@ export async function UpdateCurrentUser(req, res) {
 
     const updatedUser = await User.findById(userId).select('-password');
 
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found after update"
+      });
+    }
+
+    const userResponse = updatedUser.toObject();
+
     if (updatedUser.role === 'mentor') {
       const mentorSkills = await MentorSkill.find({ mentor: userId })
         .populate('skill', 'name');
-      updatedUser._doc.skills = mentorSkills.map(ms => ms.skill);
+      userResponse.skills = mentorSkills.map(ms => ms.skill);
+
+      const mentorProfile = await MentorProfile.findOne({ user: userId }).lean();
+      userResponse.mentorProfile = mentorProfile || null;
+      userResponse.isProfileComplete = mentorProfile?.isProfileComplete ?? false;
     }
 
     res.status(200).json({
       success: true,
-      user: updatedUser
+      user: userResponse
     });
   } catch (error) {
     console.error("Update current user error:", error);

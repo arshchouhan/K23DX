@@ -1,8 +1,13 @@
 /** @type {import('tailwindcss').Config} */
+import scrollbarHide from 'tailwind-scrollbar-hide';
+
 export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  plugins: [
+    scrollbarHide
   ],
   theme: {
     extend: {
@@ -14,6 +19,7 @@ export default {
         'fade-in': 'fadeIn 1s ease-out forwards',
         'glitch': 'glitch 2s infinite',
         'float': 'float 6s ease-in-out infinite',
+        'loading': 'loading 1s ease-in-out infinite',
       },
       keyframes: {
         bounceDown: {
@@ -46,6 +52,10 @@ export default {
           '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
           '33%': { transform: 'translateY(-20px) rotate(120deg)' },
           '66%': { transform: 'translateY(20px) rotate(240deg)' },
+        },
+        loading: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
       },
     },

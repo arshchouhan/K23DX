@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, CheckSquare, MessageCircle, UserPlus, Menu, X } from 'lucide-react';
+import { Users, CheckSquare, MessageCircle, UserPlus, Menu, X, Home } from 'lucide-react';
 import UserProfileSidebar from '../UserProfileSidebar';
 
 const MentorNavbar = ({ userName = 'Mentor' }) => {
@@ -14,6 +14,7 @@ const MentorNavbar = ({ userName = 'Mentor' }) => {
   };
 
   const menuItems = [
+    { label: 'Home', href: '/mentor/dashboard', icon: Home },
     { label: 'My Mentees', href: '/mentor/mentees', icon: Users },
     { label: 'My Tasks', href: '/mentor/tasks', icon: CheckSquare },
     { label: 'Messages', href: '/mentor/messages', icon: MessageCircle },

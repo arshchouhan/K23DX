@@ -1,5 +1,6 @@
-import { Routes, Route } from 'react-router-dom'
-import './index.css'
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import './index.css';
 import Login from './pages/Login';
 import StudentDashboard from './pages/StudentDashboard';
 import MentorDashboard from './pages/MentorDashboard';
@@ -13,38 +14,56 @@ import MentorTasksPage from './pages/MentorTasksPage';
 import MentorMessagesPage from './pages/MentorMessagesPage';
 import MentorGetMenteesPage from './pages/MentorGetMenteesPage';
 import MentorProfilePage from './pages/MentorProfilePage';
+import MentorProfileSetup from './pages/MentorProfileSetup';
 import NotFoundPage from './assets/NotFoundPage';
+import LoadingBar from './components/Common/LoadingBar';
 
 function App() {
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // ✅ Show loader on EVERY route change
+    setIsLoading(true);
+
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800); // adjust delay if needed
+
+    return () => clearTimeout(timer);
+  }, [location]); // ✅ NOT pathname – full location object
+
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Login />} />
+    <>
+      <LoadingBar isLoading={isLoading} />
 
-      {/* Student Dashboard Routes - Nested */}
-      <Route path="/student">
-        <Route path="dashboard" element={<StudentDashboard />} />
-        <Route path="explore" element={<ExplorePage />} />
-        <Route path="journal" element={<JournalPage />} />
-        <Route path="chat" element={<ChatPage />} />
-        <Route path="sessions" element={<SessionsPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-      </Route>
+      {/* ✅ key forces rerender on every navigation */}
+      <Routes location={location} key={location.key}>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login />} />
 
-      {/* Mentor Dashboard Routes - Nested */}
-      <Route path="/mentor">
-        <Route path="dashboard" element={<MentorDashboard />} />
-        <Route path="mentees" element={<MentorMenteesPage />} />
-        <Route path="tasks" element={<MentorTasksPage />} />
-        <Route path="messages" element={<MentorMessagesPage />} />
-        <Route path="get-mentees" element={<MentorGetMenteesPage />} />
-        <Route path="profile" element={<MentorProfilePage />} />
-      </Route>
+        {/* Student Routes */}
+        <Route path="/student/dashboard" element={<StudentDashboard />} />
+        <Route path="/student/explore" element={<ExplorePage />} />
+        <Route path="/student/journal" element={<JournalPage />} />
+        <Route path="/student/chat" element={<ChatPage />} />
+        <Route path="/student/sessions" element={<SessionsPage />} />
+        <Route path="/student/profile" element={<ProfilePage />} />
 
-      {/* 404 Catch-all Route */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* Mentor Routes */}
+        <Route path="/mentor/dashboard" element={<MentorDashboard />} />
+        <Route path="/mentor/mentees" element={<MentorMenteesPage />} />
+        <Route path="/mentor/tasks" element={<MentorTasksPage />} />
+        <Route path="/mentor/messages" element={<MentorMessagesPage />} />
+        <Route path="/mentor/get-mentees" element={<MentorGetMenteesPage />} />
+        <Route path="/mentor/profile" element={<MentorProfilePage />} />
+        <Route path="/mentor/profile-setup" element={<MentorProfileSetup />} />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
   );
 }
 

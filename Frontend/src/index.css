@@ -52,3 +52,29 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+/* Add these styles to your index.css */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-wrapper {
+  flex: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.content-wrapper.fadeIn {
+  opacity: 1;
+}
+
+.content-wrapper.fadeOut {
+  opacity: 0.3;
+}
+
+/* Ensure the loading bar is above the content */
+.loading-bar {
+  position: relative;
+  z-index: 1000;
+}

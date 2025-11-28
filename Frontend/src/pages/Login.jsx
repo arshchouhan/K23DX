@@ -80,14 +80,15 @@ const Login = () => {
   };
 
   // ------------------------------
-  // SIMPLE REGISTER FETCH HANDLER
+  // REGISTER AND AUTO-LOGIN HANDLER
   // ------------------------------
   const handleRegister = async (formData) => {
     try {
       setError('');
       setShowLoading(true);
 
-      const res = await fetch(`${API_URL}/auth/register`, {
+      // 1. First, register the user
+      const registerRes = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -96,15 +97,31 @@ const Login = () => {
         })
       });
 
-      const data = await res.json();
-      if (!res.ok) {
+      const registerData = await registerRes.json();
+      if (!registerRes.ok) {
         setShowLoading(false);
-        throw new Error(data.message || "Registration failed");
+        throw new Error(registerData.message || "Registration failed");
       }
 
-      // Auto-login after registration
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data));
+      // 2. If registration is successful, log the user in
+      const loginRes = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const loginData = await loginRes.json();
+      if (!loginRes.ok) {
+        setShowLoading(false);
+        throw new Error(loginData.message || "Auto-login after registration failed");
+      }
+
+      // Save the token and user data from login response
+      localStorage.setItem("token", loginData.token);
+      localStorage.setItem("user", JSON.stringify(loginData));
 
       // Keep loading screen for 2 seconds then redirect
       setTimeout(() => {
